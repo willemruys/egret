@@ -1,0 +1,52 @@
+[
+  {
+    "pattern": "Transform\\._handle",
+    "stringsByProducer": {
+      "MutRex": [
+        "TRansform._handle",
+        "TrAnsform._handle",
+        "TraNsform._handle",
+        "TranSform._handle",
+        "TransForm._handle",
+        "TransfOrm._handle",
+        "TransfoRm._handle",
+        "TransforM._handle",
+        "Transform._Handle",
+        "Transform._hAndle",
+        "Transform._haNdle",
+        "Transform._hanDle",
+        "Transform._handLe",
+        "Transform._handlE",
+        "Transform._handle",
+        "TransformA_handle",
+        "transform._handle"
+      ]
+    },
+    "type": "RegexPatternAndInputs"
+  },
+  {
+    "pattern": "\\._handle",
+    "stringsByProducer": {
+      "MutRex": [
+        "TRansform._handle",
+        "TrAnsform._handle",
+        "TraNsform._handle",
+        "TranSform._handle",
+        "TransForm._handle",
+        "TransfOrm._handle",
+        "TransfoRm._handle",
+        "TransforM._handle",
+        "Transform._Handle",
+        "Transform._hAndle",
+        "Transform._haNdle",
+        "Transform._hanDle",
+        "Transform._handLe",
+        "Transform._handlE",
+        "Transform._handle",
+        "TransformA_handle",
+        "transform._handle"
+      ]
+    },
+    "type": "RegexPatternAndInputs"
+  }
+]

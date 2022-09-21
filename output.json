@@ -1,0 +1,8 @@
+[
+  {
+    "regex": "Transform\\._handle",
+    "matches": ["Transform._handle"],
+    "nonMatches": []
+  },
+  { "regex": "\\._handle", "matches": ["._handle"], "nonMatches": [] }
+]
