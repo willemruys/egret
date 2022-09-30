@@ -25,6 +25,7 @@
 #include <string>
 #include <vector>
 #include "egret.h"
+#include "egret.cpp"
 using namespace std;
 
 static char *get_arg(int &idx, int argc, char **argv);

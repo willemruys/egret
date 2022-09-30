@@ -34,21 +34,25 @@
 
 using namespace std;
 
-vector <string>
-run_engine(string regex, string base_substring, bool check_mode = false, bool web_mode = false,
-    bool debug_mode = false, bool stat_mode = false)
+vector<string>
+run_engine(string regex, string base_substring, bool check_mode, bool web_mode,
+           bool debug_mode, bool stat_mode)
 {
   Stats stats;
-  vector <string> test_strings;
+  vector<string> test_strings;
 
-  try {
+  try
+  {
 
     // check and convert base substring
-    if (base_substring.length() < 2) {
+    if (base_substring.length() < 2)
+    {
       throw EgretException("ERROR (bad arguments): Base substring must have at least two letters");
     }
-    for (unsigned int i = 0; i < base_substring.length(); i++) {
-      if (!isalpha(base_substring[i])) {
+    for (unsigned int i = 0; i < base_substring.length(); i++)
+    {
+      if (!isalpha(base_substring[i]))
+      {
         throw EgretException("ERROR (bad arguments): Base substring can only contain letters");
       }
     }
@@ -57,64 +61,79 @@ run_engine(string regex, string base_substring, bool check_mode = false, bool we
     Util::get()->init(regex, check_mode, web_mode, base_substring);
 
     // start debug mode
-    if (debug_mode) cout << "RegEx: " << regex << endl;
-     
+    if (debug_mode)
+      cout << "RegEx: " << regex << endl;
+
     // initialize scanner with regex
     Scanner scanner;
     scanner.init(regex);
-    if (debug_mode) scanner.print();
-    if (stat_mode) scanner.add_stats(stats);
-  
+    if (debug_mode)
+      scanner.print();
+    if (stat_mode)
+      scanner.add_stats(stats);
+
     // build parse tree
     ParseTree tree;
     tree.build(scanner);
-    if (debug_mode) tree.print();
-    if (stat_mode) tree.add_stats(stats);
+    if (debug_mode)
+      tree.print();
+    if (stat_mode)
+      tree.add_stats(stats);
 
     // build NFA
     NFA nfa;
     nfa.build(tree);
-    if (debug_mode) nfa.print();
-    if (stat_mode) nfa.add_stats(stats);
+    if (debug_mode)
+      nfa.print();
+    if (stat_mode)
+      nfa.add_stats(stats);
 
     // traverse NFA basis paths and process them
-    vector <Path> paths = nfa.find_basis_paths();
-    vector <Path>::iterator path_iter;
-    for (path_iter = paths.begin(); path_iter != paths.end(); path_iter++) {
+    vector<Path> paths = nfa.find_basis_paths();
+    vector<Path>::iterator path_iter;
+    for (path_iter = paths.begin(); path_iter != paths.end(); path_iter++)
+    {
       path_iter->process_path();
     }
 
     // run checker
-    if (check_mode) {
+    if (check_mode)
+    {
       Checker checker(paths, scanner.get_tokens());
       checker.check();
     }
 
     // generate tests
-    if (!check_mode) {
+    if (!check_mode)
+    {
       TestGenerator gen(paths, tree.get_punct_marks(), debug_mode);
       test_strings = gen.gen_test_strings();
-      if (stat_mode) gen.add_stats(stats);
+      if (stat_mode)
+        gen.add_stats(stats);
     }
-    
+
     // print stats
-    if (stat_mode) stats.print();
+    if (stat_mode)
+      stats.print();
   }
-  catch (EgretException const &e) {
-    vector <string> result;
+  catch (EgretException const &e)
+  {
+    vector<string> result;
     result.push_back(e.get_error());
     return result;
   }
 
   // Add alerts to front of list.
-  vector <string> alerts = Util::get()->get_alerts();
-  if (check_mode) {
-    if (alerts.size() == 0) {
+  vector<string> alerts = Util::get()->get_alerts();
+  if (check_mode)
+  {
+    if (alerts.size() == 0)
+    {
       alerts.insert(alerts.begin(), "No violations detected.");
     }
     return alerts;
   }
-  test_strings.insert(test_strings.begin(),"BEGIN");
+  test_strings.insert(test_strings.begin(), "BEGIN");
   test_strings.insert(test_strings.begin(), alerts.begin(), alerts.end());
 
   return test_strings;
