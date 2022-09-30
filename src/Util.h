@@ -99,7 +99,7 @@ private:
 
   // Alerts
   vector <string> alerts;                       // vector of alert strings
-  set <pair <string, int>> prev_alerts;         // all previous alerts
+  set <pair <string, int> > prev_alerts;         // all previous alerts
 
 };
      
