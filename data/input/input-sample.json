@@ -1,0 +1,23 @@
+[
+  {
+    "pattern": "^I should see Kundli option$",
+    "supportedLangs": [],
+    "type": "Regex",
+    "useCount_IStype_to_nPosts": {},
+    "useCount_registry_to_nModules": { "rubygems": 1 }
+  },
+  {
+    "pattern": "\\b(?<_1>slots|signals)\\b",
+    "supportedLangs": [],
+    "type": "Regex",
+    "useCount_IStype_to_nPosts": {},
+    "useCount_registry_to_nModules": { "rubygems": 1 }
+  },
+  {
+    "pattern": "noimage.gif$",
+    "supportedLangs": [],
+    "type": "Regex",
+    "useCount_IStype_to_nPosts": {},
+    "useCount_registry_to_nModules": { "rubygems": 1 }
+  }
+]
