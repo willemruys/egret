@@ -1,0 +1,35 @@
+[
+  {
+    "regex": "[^-a-z0-9\\.\\(\\),_`\\*\\'\"]+",
+    "exceptionStackTrace": null,
+    "matches": ["EVIL", " "],
+    "nonMatches": [
+      "`",
+      ".",
+      "-",
+      ",",
+      "*",
+      ")",
+      "(",
+      "'",
+      "\"",
+      "eVil",
+      "ev_il",
+      "ev il",
+      "ev4il",
+      "e",
+      "6",
+      "_",
+      "",
+      "evil"
+    ]
+  },
+  {
+    "regex": "\\b(?<_1>slots|signals)\\b",
+    "exceptionStackTrace": {
+      "exceptionThrownBy": "Python",
+      "exception": "unknown extension ?<_"
+    },
+    "matches": []
+  }
+]

@@ -21,6 +21,7 @@
 import json
 import re
 import string
+from string import printable
 import sys
 import time
 from xml.etree.ElementInclude import include
@@ -119,6 +120,7 @@ if opts.fileName != None and opts.regex != None:
     print("Cannot specify both a regular expression and input file")
     sys.exit(-1)
 
+logFile = open("./tmp/logs.tx", 'w')
 # get the regular expression
 output = []
 descStr = []
@@ -136,33 +138,14 @@ if opts.fileName != None:
             continue
         inFile.close()
 
-
-# regexStrings.remove('[A-Za-zÀ-ÖØ-öø-ÿ]\\S*')
-# regexStrings.remove('[eÃ©]$')
-# regexStrings.remove('([アァカヵガサザタダナハバパマヤャラワヮヷ])ー')
-# regexStrings.remove('^[Â£$â‚¬?.]')
-# regexStrings.remove('^[a-zA-Z0-9?!§$%#]$')
-# regexStrings.remove('[ťţŧț]')
-# regexStrings.remove('□[^▽]')
-# regexStrings.remove('^[0-9 ]+丁目[0-9 ]+番?')
-# regexStrings.remove('[\x00-\x08,\x0b-\x0c,\x0e-x1F,\x7f]')
-# regexStrings.remove('((\s*<[NS]>\s*,\s*){100,})')
-# regexStrings.remove('^([А-ЯЁ]{1})([а-яё]{1,15})$')
-# regexStrings.remove(
-#     "^(?:(?:(?:https?|ftp):)?\\/\\/)(?:\\S+(?::\\S*)?@)?(?:(?!(?:10|127)(?:\\.\\d{1,3}){3})(?!(?:169\\.254|192\\.168)(?:\\.\\d{1,3}){2})(?!172\\.(?:1[6-9]|2\\d|3[0-1])(?:\\.\\d{1,3}){2})(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}(?:\\.(?:[1-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))|(?:(?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)(?:\\.(?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)*(?:\\.(?:[a-z\\u00a1-\\uffff]{2,})).?)(?::\\d{2,5})?(?:[/?#]\\S*)?$")
-
-
-# for regexStr in regexStrings:
-#     regexStr: str
-#     for specialCharacter in specialCharacters:
-#         if specialCharacter in regexStr:
-#             regexStrings.remove(regexStr)
 # compile the regular expression
 l = len(regexStrings)
 printProgressBar(0, l, prefix = 'Progress:', suffix = 'Complete', length = 50)
 for i, regexStr in enumerate(regexStrings):
     if isinstance(regexStr, str) and len(regexStr) > 0 and len(regexStr) < 501:
         # print(regexStr)
+        if regexStr.isprintable():
+            logFile.write(regexStr + '\n')
         compileRegex = True
         exception = ''
         hasError = False
@@ -183,7 +166,7 @@ for i, regexStr in enumerate(regexStrings):
                     'exceptionThrownBy': 'EGRET',
                     'exception': status
                 },
-                    'matches': []})
+                    'matches': [], 'nonMatches': []})
                 hasError = False
                 continue
 
@@ -228,8 +211,17 @@ for i, regexStr in enumerate(regexStrings):
                 inputStrs = inputStrs[idx+1:]
         printProgressBar(i + 1, l, prefix = 'Progress:', suffix = 'Complete', length = 50)
 
+
+        matches = []
+        nonMatches = []
+        for inputStr in inputStrs:
+            search = regex.fullmatch(inputStr)
+            if search:
+                matches.append(inputStr)
+            else:
+                nonMatches.append(inputStr)
         output.append(
-            {'regex': regexStr, 'exceptionStackTrace': None, 'matches': inputStrs})
+            {'regex': regexStr, 'exceptionStackTrace': None, 'matches': matches, 'nonMatches': nonMatches})
 
 amount_of_splits = 10
 

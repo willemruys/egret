@@ -1,0 +1,10 @@
+[
+  {
+    "regex": "\\b(?<_1>slots|signals)\\b",
+    "exceptionStackTrace": {
+      "exceptionThrownBy": "Python",
+      "exception": "unknown extension ?<_"
+    },
+    "matches": []
+  }
+]

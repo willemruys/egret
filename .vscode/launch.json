@@ -12,7 +12,7 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
-                "--f", "${workspaceFolder}/input-sample.json",
+                "--f", "${workspaceFolder}/data/input/input_sample.json",
                 "--o", "${workspaceFolder}/output.csv"
             ],
         }
