@@ -17,7 +17,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+import threading
+import signal
 import json
 import re
 import string
@@ -28,12 +29,20 @@ from xml.etree.ElementInclude import include
 import egret_ext
 from optparse import OptionParser
 import numpy as np
-#import time
+import os
+import errno
+from functools import wraps
+
+class TimeOutException(Exception):
+    def __init__(self, message, errors):
+        super(TimeOutException, self).__init__(message)
+        self.errors = errors
 
 # Precondition: regexStr successfully compiles and all strings in testStrings
 # match the regular expression
 
-def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
+
+def printProgressBar(iteration, total, prefix='', suffix='', decimals=1, length=100, fill='█', printEnd="\r"):
     """
     Call in a loop to create terminal progress bar
     @params:
@@ -46,13 +55,20 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
         fill        - Optional  : bar fill character (Str)
         printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
     """
-    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    percent = ("{0:." + str(decimals) + "f}").format(100 *
+                                                     (iteration / float(total)))
     filledLength = int(length * iteration // total)
     bar = fill * filledLength + '-' * (length - filledLength)
-    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
+    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end=printEnd)
     # Print New Line on Complete
-    if iteration == total: 
+    if iteration == total:
         print()
+
+
+def handle_timout(fn_name):
+    print(fn_name)
+    raise TimeOutException('Time is up! Moving to next regex.', Exception())
+
 
 def get_group_info(regexStr, testStrings, namedOnly):
     # check for empty list
@@ -84,7 +100,7 @@ def get_group_info(regexStr, testStrings, namedOnly):
     # get groups for each string
     groupDict = {}
     for testStr in testStrings:
-        match = regex.fullmatch(testStr)
+        match = regex.match(testStr)
         if useNames:
             g = match.groupdict()
             groupList = []
@@ -96,6 +112,23 @@ def get_group_info(regexStr, testStrings, namedOnly):
 
     return groupDict
 
+class TimeoutError(Exception):
+    pass
+def timeout(seconds, error_message=os.strerror(errno.ETIME)):
+    def decorator(func):
+        def _handle_timeout(signum, frame):
+            raise TimeoutError(error_message)
+
+        def wrapper(*args, **kwargs):
+            signal.signal(signal.SIGALRM, _handle_timeout)
+            signal.setitimer(signal.ITIMER_REAL,seconds) #used timer instead of alarm
+            try:
+                result = func(*args, **kwargs)
+            finally:
+                signal.alarm(0)
+            return result
+        return wraps(func)(wrapper)
+    return decorator
 
 parser = OptionParser()
 parser.add_option("-f", "--file", dest="fileName",
@@ -131,33 +164,41 @@ if opts.fileName != None:
 
     fileAsJson = json.load(inFile)
     for regexObject in fileAsJson:
-        regexStrings.append(regexObject['pattern'])
-        try:
-            descStr.append(regexObject['pattern'])
-        except:
-            continue
+        # regexes from stackoverflow and regexlib are stored in array called patterns
+        if 'patterns' in regexObject:
+            for pattern in regexObject['patterns']:
+                regexStrings.append(pattern)
+        else:
+            regexStrings.append(regexObject['pattern'])
+            try:
+                descStr.append(regexObject['pattern'])
+            except:
+                continue
         inFile.close()
 
 # compile the regular expression
 l = len(regexStrings)
-printProgressBar(0, l, prefix = 'Progress:', suffix = 'Complete', length = 50)
+printProgressBar(0, l, prefix='Progress:', suffix='Complete', length=50)
+
+@timeout(10)
+def compile_regex(regexStr):
+    output = egret_ext.run(regexStr, opts.baseSubstring,
+                  False, False, False, False)
+    return output
+    
+@timeout(10)
+def perform_search(inputStr):
+    return regex.search(inputStr)
+
 for i, regexStr in enumerate(regexStrings):
     if isinstance(regexStr, str) and len(regexStr) > 0 and len(regexStr) < 501:
-        # print(regexStr)
-        if regexStr.isprintable():
-            logFile.write(regexStr + '\n')
         compileRegex = True
         exception = ''
         hasError = False
-        # capture regex patterns containing special characters
-        # if 'â' not in regexStr or 'Â' or regexStr or '¬' not in regexStr and '([アァカヵガサザタダナハバパマヤャラワヮヷ])ー' not in regexStr:
         try:
             regex = re.compile(regexStr)
             inputStrs = [10]
-            # execute regex-test
-            #start_time = time.process_time()
-            inputStrs = egret_ext.run(regexStr, opts.baseSubstring,
-                                    False, False, False, False)
+            inputStrs = compile_regex(regexStr)
             status = inputStrs[0]
             hasError = (status[0:5] == "ERROR")
             # in this case, an error is thrown by EGRET
@@ -182,16 +223,20 @@ for i, regexStr in enumerate(regexStrings):
                 'exceptionThrownBy': 'Python',
                 'exception':  e.msg
             },
+
                 'matches': [], })
             hasError = False
             continue
-
+        except TimeoutError:
+            print('Timeout!')
+            continue
         except Exception as e:
-            output.append({'regex': regexStr, 'exceptionStackTrace': {
-                'exceptionThrownBy': 'EGRET',
-                'exception': e.args[0]
-            },
-                'matches': []})
+            if len(e.args) > 0:
+                output.append({'regex': regexStr, 'exceptionStackTrace': {
+                    'exceptionThrownBy': 'EGRET',
+                    'exception': e.args[0]
+                },
+                    'matches': []})
             hasError = False
             continue
 
@@ -209,27 +254,31 @@ for i, regexStr in enumerate(regexStrings):
             else:
                 alerts = inputStrs[:idx]
                 inputStrs = inputStrs[idx+1:]
-        printProgressBar(i + 1, l, prefix = 'Progress:', suffix = 'Complete', length = 50)
-
-
-        matches = []
-        nonMatches = []
+        printProgressBar(i + 1, l, prefix='Progress:',
+                         suffix='Complete', length=50)
+    matches = []
+    nonMatches = []
+    try:
         for inputStr in inputStrs:
-            search = regex.fullmatch(inputStr)
+            search = perform_search(inputStr)
             if search:
                 matches.append(inputStr)
             else:
                 nonMatches.append(inputStr)
         output.append(
             {'regex': regexStr, 'exceptionStackTrace': None, 'matches': matches, 'nonMatches': nonMatches})
+    except:
+        # do nothing
+        continue
 
 amount_of_splits = 10
 
 splitted = np.array_split(output, amount_of_splits)
 
 for i, split in enumerate(splitted):
-    
-    outFile = open("./data/output/output_" + str(i) + ".json", 'w')
+
+    outFile = open(
+        "./data/output/stackoverflow/stackoverflow_egret_" + str(i) + ".json", 'w')
     json.dump(list(split), outFile)
 
 if opts.outputFile:
